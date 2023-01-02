@@ -22,6 +22,9 @@ public class weaponSystem : MonoBehaviour
 	[Header("mele")]
 	public Transform meleAtackPos;
 	
+	[Header("UI")]
+	public TextMeshProUGUI ammoText;
+	
 	[Header("equiping")]
 	public Image[] allSlots;
 	public List<int> myWeapons = new List<int>();
@@ -68,8 +71,8 @@ public class weaponSystem : MonoBehaviour
 	
 	void Update()
 	{
-		if(canShoot)
-			myInput();
+		myInput();
+		MyUI();
 		
 		//timers
 		if (shootDelayTimer >= 0)
@@ -103,12 +106,12 @@ public class weaponSystem : MonoBehaviour
 			if (wantingWeapon.z == 0)
 			{
 				changeWantingTimer = -1;
-				StartCoroutine(Equip(wantingWeapon.x, wantingWeapon.y));
+				StartCoroutine(Equip((int)wantingWeapon.x, (int)wantingWeapon.y));
 			}
 			else
 			{
 				changeWantingTimer = -1;
-				StartCoroutine(EquipNew(wantingWeapon.x, wantingWeapon.y, wantingWeaObj));
+				StartCoroutine(EquipNew((int)wantingWeapon.x, (int)wantingWeapon.y, wantingWeaObj));
 			}
 		}
 		RaycastHit hit;
@@ -172,17 +175,20 @@ public class weaponSystem : MonoBehaviour
 						StopCoroutine(reload());
 						shootDelayTimer = a.shootDelay;
 						shoot();
+						ammoWi.ammo--;
 					}
 					else
 					{
 						shootDelayTimer = a.shootDelay;
 						shoot();
+						ammoWi.ammo--;
 					}
 				}
 				else if (!a.multiShoot && shootDelayTimer < 0 && Input.GetKey(a.shootKey) && ammoWi.ammo > 0)
 				{
 					shootDelayTimer = a.shootDelay;
 					shoot();
+					ammoWi.ammo--;
 				}
 				if (shootDelayTimer > 0 && ammoWi.ammo == 0 && !reloading)
 				{
@@ -213,14 +219,32 @@ public class weaponSystem : MonoBehaviour
 	////////////////////////RELOAD///////////////////////
 	IEnumerator reload()
 	{
+		reloading = true;
 		if (a.smoothReload)
 		{
-			float oneBullTime;
+			float oneBullTime = a.reloadTime/a.maxAmmo;
+			float i = (a.maxAmmo-ammoWi.ammo)*oneBullTime;
+			weaAnim.SetFloat("speed", i > a.reloadTime/2 ? i : a.reloadTime/2);
+			weaAnim.Play("reload");
+			while (ammoWi.ammo < a.maxAmmo)
+			{
+				yield return new WaitForSeconds(oneBullTime);
+				ammoWi.ammo++;
+			}
 		}
 		else
 		{
-			
+			float oneBullTime = a.reloadTime/a.maxAmmo;
+			float i = (a.maxAmmo-ammoWi.ammo)*oneBullTime > a.reloadTime/2 ? (a.maxAmmo-ammoWi.ammo)*oneBullTime : a.reloadTime/2;
+			weaAnim.SetFloat("speed", i);
+			weaAnim.Play("reload");
+			yield return new WaitForSeconds(i/2);
+			ammoWi.ammo = 0;
+			yield return new WaitForSeconds(i/2);
+			ammoWi.ammo = a.maxAmmo;
 		}
+		reloading = false;
+		yield return null;
 	}
 	
 	////////////////////////SHOOT////////////////////////
@@ -304,6 +328,7 @@ public class weaponSystem : MonoBehaviour
 	{
 		canShoot = false;
 		canChange = false;
+		weaPos.transform.localRotation = Quaternion.identity;
 		
 		if (myWeapon != -1)
 		{
@@ -323,7 +348,7 @@ public class weaponSystem : MonoBehaviour
 		
 		currWea = Instantiate(a.weaModel, weaPos.position, a.normalRotation);
 		currWea.transform.parent = weaPos;
-		currWea.transform.localRotation = a.normalRotation;
+		weaPos.transform.localRotation = a.normalRotation;
 		ammoWi = currWea.GetComponent<weaponIndex>();
 		weaAnim = currWea.GetComponent<Animator>();
 		weaAnim.SetFloat("speed", 1 / a.equipTime);
@@ -340,6 +365,7 @@ public class weaponSystem : MonoBehaviour
 		Destroy(newWeapon.GetComponent<Rigidbody>());
 		canShoot = false;
 		canChange = false;
+		weaPos.transform.localRotation = Quaternion.identity;
 		myWeapon = u;
 		allSlots[u].color = new Color32(255, 255, 255, 255);
 		
@@ -373,7 +399,7 @@ public class weaponSystem : MonoBehaviour
 			currWea.transform.localRotation = Quaternion.Lerp(currWea.transform.localRotation, a.normalRotation, delta/newWeaSpeed);
 			yield return 0;
 		}
-		currWea.transform.localRotation = a.normalRotation;
+		weaPos.transform.localRotation = a.normalRotation;
 		
 		weaAnim = currWea.GetComponent<Animator>();
 		if (!a.mele)
@@ -414,5 +440,14 @@ public class weaponSystem : MonoBehaviour
 				allSlots[i].color = new Color32(255, 255, 255, 255);
 			allSlots[i].sprite = assets[myWeapons[i]].mySprite;
 		}
+	}
+	
+	////////////////////////////////UI/////////////////////////////
+	void MyUI()
+	{
+		if (a.useAmmo)
+			ammoText.text = ammoWi.ammo.ToString() + "/" + a.maxAmmo.ToString();
+		else
+			ammoText.text = "Infinite";
 	}
 }

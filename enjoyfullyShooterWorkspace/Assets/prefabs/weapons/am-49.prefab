@@ -1134,6 +1134,7 @@ MonoBehaviour:
   outlineSpeed: 10
   watching: 0
   index: 2
+  ammo: 30
 --- !u!95 &938928177164081259
 Animator:
   serializedVersion: 4
