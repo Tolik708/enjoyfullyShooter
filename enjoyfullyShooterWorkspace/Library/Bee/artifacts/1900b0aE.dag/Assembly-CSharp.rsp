@@ -383,6 +383,7 @@
 "Assets/scripts/player/weaponAsset.cs"
 "Assets/scripts/player/weaponIndex.cs"
 "Assets/scripts/player/weaponSystem.cs"
+"Assets/scripts/test.cs"
 -langversion:9.0
 
 /deterministic

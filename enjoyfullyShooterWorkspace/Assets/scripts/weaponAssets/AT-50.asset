@@ -23,8 +23,9 @@ MonoBehaviour:
   weaModel: {fileID: 5983098372404386157, guid: 03408fd4f51ceaf44a056f6dd4c7d7bb, type: 3}
   normalRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   myTexture: {fileID: 2800000, guid: 87418b6650240d948a511db6d90150e4, type: 3}
-  unequipTime: 0.1
-  equipTime: 0.1
+  unequipTime: 0.5
+  equipTime: 0.5
+  shootTime: 0.1
   mySprite: {fileID: 0}
   powerOfKickFlyY: 0
   powerOfKickGroundY: 0
@@ -60,7 +61,6 @@ MonoBehaviour:
   reloadTime: 1.5
   reloadWantingTime: 0.2
   maxAmmo: 30
-  ammo: 30
   useAmmo: 1
   smoothReload: 0
   shootKey: 323

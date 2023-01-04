@@ -24,7 +24,8 @@ MonoBehaviour:
   normalRotation: {x: 0, y: 0, z: 0, w: 0}
   myTexture: {fileID: 2800000, guid: a9c5135af6d3424429864f569b1e1ec0, type: 3}
   unequipTime: 0.5
-  equipTime: 0.1
+  equipTime: 0.5
+  shootTime: 0.25
   mySprite: {fileID: 0}
   powerOfKickFlyY: 0
   powerOfKickGroundY: 0
@@ -60,8 +61,7 @@ MonoBehaviour:
   reloadTime: 0
   reloadWantingTime: 0
   maxAmmo: 0
-  ammo: 0
   useAmmo: 0
   smoothReload: 0
-  shootKey: 0
+  shootKey: 323
   reloadKey: 0

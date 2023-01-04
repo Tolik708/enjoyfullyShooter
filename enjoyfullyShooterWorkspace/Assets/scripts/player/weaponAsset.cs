@@ -22,6 +22,7 @@ public class weaponAsset : ScriptableObject
 	public Texture2D myTexture;
 	public float unequipTime;
 	public float equipTime;
+	public float shootTime;
 	[HideInInspector]
 	public Sprite mySprite;
 	
@@ -80,4 +81,19 @@ public class weaponAsset : ScriptableObject
 	[Header("Input")]
 	public KeyCode shootKey;
 	public KeyCode reloadKey;
+	
+	public void start()
+	{
+		//Init texture of sprite
+		if (myTexture != null)
+			mySprite = Sprite.Create(myTexture, new Rect(0, 0, myTexture.width, myTexture.height), new Vector2(0.5f, 0.5f), 100);
+		
+		//variables that can't be 0
+		if (equipTime == 0)
+			equipTime = 0.1f;
+		if (unequipTime == 0)
+			unequipTime = 0.1f;
+		if (shootTime == 0)
+			shootTime = 0.1f;
+	}
 }
