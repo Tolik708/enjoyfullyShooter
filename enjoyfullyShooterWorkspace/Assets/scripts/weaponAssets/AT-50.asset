@@ -44,7 +44,7 @@ MonoBehaviour:
   useGravity: 0
   gravityPower: 0
   randSpeed: 0
-  bullSpeed: 12
+  bullSpeed: 3
   minRandSpeed: 0
   maxRandSpeed: 0
   bullCount: 0
@@ -58,6 +58,8 @@ MonoBehaviour:
   scater: 1
   mele: 0
   meleRadius: {x: 0, y: 0, z: 0}
+  reboundCount: 5
+  rebound: 1
   reloadTime: 1.5
   reloadWantingTime: 0.2
   maxAmmo: 30

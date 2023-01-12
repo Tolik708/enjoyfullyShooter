@@ -37,10 +37,6 @@ public class player : MonoBehaviour
 	[HideInInspector]
 	public bool freeze;
 	private Vector3 moveDirection;
-	[HideInInspector]
-	public int lastShootTime;
-	[HideInInspector]
-	public int lastShootTime1;
 	
 	[Header("crouching")]
 	public float crouchScale;
@@ -430,32 +426,25 @@ public class player : MonoBehaviour
 	/////////////////movement////////////
 	void movement()
 	{
-		if (lastShootTime == 0)
+		moveDirection = orientation.forward * vInput + orientation.right * hInput;
+		
+		if (OnSlope() && !exitingSlope)
 		{
-			moveDirection = orientation.forward * vInput + orientation.right * hInput;
-			
-			if (OnSlope() && !exitingSlope)
-			{
-				rb.AddForce(SlopeDir(moveDirection) * realSpeed * 20);
-				if (rb.velocity.y > 0)
-					rb.AddForce(Vector3.down * 40);
-				rb.useGravity = false;
-			}
-			else if (!exitClimb)
-			{
-				rb.useGravity = true;
-				rb.AddForce(moveDirection * realSpeed * 10);
-			}
-			if (vInput == 0 && hInput == 0 && !pg.swing)
-				noInputTimer -= Time.deltaTime;
-			else
-				noInputTimer = 0.5f;
+			rb.AddForce(SlopeDir(moveDirection) * realSpeed * 20);
+			if (rb.velocity.y > 0)
+				rb.AddForce(Vector3.down * 40);
+			rb.useGravity = false;
 		}
-		else if (lastShootTime > 0)
+		else if (!exitClimb)
 		{
-			Debug.Log("0");
-			lastShootTime -= 1;
+			rb.useGravity = true;
+			rb.AddForce(moveDirection * realSpeed * 10);
 		}
+		if (vInput == 0 && hInput == 0 && !pg.swing)
+			noInputTimer -= Time.deltaTime;
+		else
+			noInputTimer = 0.5f;
+		
 	}
 	
 	
@@ -522,8 +511,8 @@ public class player : MonoBehaviour
 		}
 		else
 		{
-			if (lastShootTime == 0)
-				rb.AddForce(slideDir.normalized * slideForce);
+			rb.AddForce(slideDir.normalized * slideForce);
+			
 			if (realGrounded && speed > -0.1f)
 				speed -= slideSpeedDecreese;
 		}
@@ -683,33 +672,23 @@ public class player : MonoBehaviour
 	/////////////////speedLimitation/////
 	void SpeedLimit()
 	{
-		if (lastShootTime1 > 0)
+		if (OnSlope() && !exitingSlope)
 		{
-			lastShootTime1--;
-			Debug.Log("2");
-			vInput = 0;
-			hInput = 0;
-			speed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
+			if (rb.velocity.magnitude > realSpeed)
+				rb.velocity = rb.velocity.normalized * realSpeed;
 		}
 		else
 		{
-			if (OnSlope() && !exitingSlope)
+			Vector3 flatVel = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+			if (flatVel.magnitude > realSpeed)
 			{
-				if (rb.velocity.magnitude > realSpeed)
-					rb.velocity = rb.velocity.normalized * realSpeed;
-			}
-			else
-			{
-				Vector3 flatVel = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-				if (flatVel.magnitude > realSpeed)
-				{
-					Vector3 limitedVel = flatVel.normalized * realSpeed;
-					rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
-				}
+				Vector3 limitedVel = flatVel.normalized * realSpeed;
+				rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
 			}
 		}
 	}
 	
+	//rules of speed
 	void smoothSpeed()
 	{
 		if ((rb.drag != 0 && speed < realSpeed) || pg.swing)
@@ -726,12 +705,6 @@ public class player : MonoBehaviour
 		
 		if (speed > 15 || realSpeed > 15)
 			speed = realSpeed = 15;
-	}
-	
-	public void eddForce(int i)
-	{
-		lastShootTime = i;
-		lastShootTime1 = i;
 	}
 	
 	/////////////////slopes//////////////

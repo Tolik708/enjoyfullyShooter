@@ -12,15 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 381f10d0c40a2c648a7c233fe8fa7db6, type: 3}
   m_Name: shotgun
   m_EditorClassIdentifier: 
+  shootDelay: 1
+  multiShoot: 0
   collidingLayers:
     serializedVersion: 2
     m_Bits: 15297
   collidingLayers1: 00000000060000000700000008000000090000000b0000000c0000000d000000
   bulletLifeTime: 10
-  shootDelay: 1
-  reloadWantingTime: 0.2
-  multiShoot: 0
   bullPrefab: {fileID: 2320200738495290215, guid: 12d7f8e9153a9a941846ce3f60a7740f, type: 3}
+  weaModel: {fileID: 5983098372404386157, guid: 03408fd4f51ceaf44a056f6dd4c7d7bb, type: 3}
+  normalRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
+  myTexture: {fileID: 2800000, guid: 87418b6650240d948a511db6d90150e4, type: 3}
+  unequipTime: 0.1
+  equipTime: 0.1
+  shootTime: 0.1
+  mySprite: {fileID: 0}
   powerOfKickFlyY: 7
   powerOfKickGroundY: 7
   powerOfKickFlyX: 0.1
@@ -50,9 +56,11 @@ MonoBehaviour:
   yScater: 0
   xScater: 0
   scater: 0
+  mele: 0
+  meleRadius: {x: 0, y: 0, z: 0}
   reloadTime: 2
+  reloadWantingTime: 0.2
   maxAmmo: 7
-  ammo: 3
   useAmmo: 1
   smoothReload: 1
   shootKey: 323

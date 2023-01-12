@@ -12,25 +12,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 381f10d0c40a2c648a7c233fe8fa7db6, type: 3}
   m_Name: fist
   m_EditorClassIdentifier: 
-  shootDelay: 1
-  multiShoot: 0
+  shootDelay: 0.5
+  multiShoot: 1
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
   collidingLayers:
     serializedVersion: 2
     m_Bits: 0
   collidingLayers1: 
   bulletLifeTime: 0
   bullPrefab: {fileID: 2320200738495290215, guid: 12d7f8e9153a9a941846ce3f60a7740f, type: 3}
+  bulletDamage: 1
+  headDamagaMultiplayer: 2
   weaModel: {fileID: 7765304591945416917, guid: 6c91bfb6521e01946a80243177622df7, type: 3}
-  normalRotation: {x: 0, y: 0, z: 0, w: 0}
+  normalRotation: {x: 0, y: 0, z: 0, w: 1}
   myTexture: {fileID: 2800000, guid: a9c5135af6d3424429864f569b1e1ec0, type: 3}
   unequipTime: 0.5
   equipTime: 0.5
   shootTime: 0.25
   mySprite: {fileID: 0}
-  powerOfKickFlyY: 0
-  powerOfKickGroundY: 0
-  powerOfKickFlyX: 0
-  powerOfKickGroundX: 0
+  kickPowerFly: {x: 0, y: 0}
+  kickPowerGround: {x: 0, y: 0}
   useKick: 0
   explosionLayers:
     serializedVersion: 2
@@ -53,11 +56,15 @@ MonoBehaviour:
   multiBull: 0
   bullAmmount: 0
   pattern: 0
+  laser: 0
+  mele: 1
+  meleRadius: {x: 0.25, y: 0.25, z: 0.25}
+  handReturnSpeed: 0
   yScater: 0
   xScater: 0
   scater: 0
-  mele: 1
-  meleRadius: {x: 0.5, y: 0.5, z: 0.5}
+  reboundCount: 0
+  rebound: 0
   reloadTime: 0
   reloadWantingTime: 0
   maxAmmo: 0

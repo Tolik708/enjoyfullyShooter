@@ -21,6 +21,9 @@ public class weaponSystem : MonoBehaviour
 	
 	[Header("mele")]
 	public Transform meleAtackPos;
+	[HideInInspector]
+	public bool attacking;
+	private List<GameObject> attackedObjects = new List<GameObject>();
 	
 	[Header("UI")]
 	public TextMeshProUGUI ammoText;
@@ -63,13 +66,15 @@ public class weaponSystem : MonoBehaviour
 	
 	[Header("animation")]
 	public Transform weaPos;
-	public float returnRotationSpeed;
+	public Vector3 stableLocalWeaPos;
+	public float returnSpeed;
 	private Animator weaAnim;
 	private bool animEnabled = true;
 	
 	//sway
 	public float swaySpeed;
-	public float swayIntensity;
+	public Vector2 swayIntensity;
+	public Vector2 swayPosIntensity;
 	public Vector2 minAndMaxXSway;
 	public Vector2 minAndMaxYSway;
 	
@@ -80,7 +85,9 @@ public class weaponSystem : MonoBehaviour
 	private int delta1 = 1;
 	
 	void Start()
-	{	
+	{
+		stableLocalWeaPos = weaPos.localPosition;
+		
 		for (int i = 0; i < assets.Length; i++)
 			assets[i].start();
 		
@@ -93,6 +100,7 @@ public class weaponSystem : MonoBehaviour
 		myInput();
 		MyUI();
 		weaAnimation();
+		meleWeapon();
 		
 		//timers
 		if (shootDelayTimer >= 0)
@@ -143,19 +151,16 @@ public class weaponSystem : MonoBehaviour
 			wi.watching = true;
 			if (Input.GetKeyDown(equipKey))
 			{
-				for (int i = 0; i < myWeapons.Count; i++)
+				if (myWeapons.Count < allSlots.Length && canChange)
 				{
-					if (myWeapons[i].x != wi.index && myWeapons.Count < allSlots.Length && canChange)
-					{
-						recalculateInventory();
-						StartCoroutine(EquipNew(wi.index, myWeapons.Count, hit.collider.gameObject));
-					}
-					else if (myWeapons[i].x != wi.index && myWeapons.Count < allSlots.Length && !canChange)
-					{
-						wantingWeapon = new Vector3(wi.index, myWeapons.Count, 1);
-						changeWantingTimer = changeWantingTime;
-						wantingWeaObj = hit.collider.gameObject;
-					}
+					recalculateInventory();
+					StartCoroutine(EquipNew(wi.index, myWeapons.Count, hit.collider.gameObject));
+				}
+				else if (myWeapons.Count < allSlots.Length && !canChange)
+				{
+					wantingWeapon = new Vector3(wi.index, myWeapons.Count, 1);
+					changeWantingTimer = changeWantingTime;
+					wantingWeaObj = hit.collider.gameObject;
 				}
 			}
 		}
@@ -196,41 +201,19 @@ public class weaponSystem : MonoBehaviour
 		{
 			if (a.useAmmo)
 			{
-				if (a.multiShoot && shootDelayTimer < 0 && Input.GetKey(a.shootKey) && ammoWi.ammo > 0)
+				if (a.multiShoot && shootDelayTimer < 0 && Input.GetKey(a.shootKey) && ammoWi.ammo > 0 && !reloading)
 				{
-					if (reloading)
-					{
-						StopCoroutine(reload());
-						shootDelayTimer = a.shootDelay;
-						shoot();
-						ammoWi.ammo--;
-						myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
-					}
-					else
-					{
-						shootDelayTimer = a.shootDelay;
-						shoot();
-						ammoWi.ammo--;
-						myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
-					}
+					shootDelayTimer = a.shootDelay;
+					shoot();
+					ammoWi.ammo--;
+					myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
 				}
-				else if (!a.multiShoot && shootDelayTimer < 0 && Input.GetKey(a.shootKey) && ammoWi.ammo > 0)
+				else if (!a.multiShoot && shootDelayTimer < 0 && Input.GetKey(a.shootKey) && ammoWi.ammo > 0 && !reloading)
 				{
-					if (reloading)
-					{
-						StopCoroutine(reload());
-						shootDelayTimer = a.shootDelay;
-						shoot();
-						ammoWi.ammo--;
-						myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
-					}
-					else
-					{
-						shootDelayTimer = a.shootDelay;
-						shoot();
-						ammoWi.ammo--;
-						myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
-					}
+					shootDelayTimer = a.shootDelay;
+					shoot();
+					ammoWi.ammo--;
+					myWeapons[myWeapon] = new Vector2(myWeapons[myWeapon].x, ammoWi.ammo);
 				}
 				
 				//reloading
@@ -269,7 +252,7 @@ public class weaponSystem : MonoBehaviour
 		{
 			float oneBullTime = a.reloadTime/a.maxAmmo;
 			float i = (a.maxAmmo-ammoWi.ammo)*oneBullTime;
-			weaAnim.SetFloat("speed", i > a.reloadTime/2 ? 1/i : 1/a.reloadTime/2);
+			weaAnim.SetFloat("speed", i > a.reloadTime/2 ? 1/i : 1/(a.reloadTime/2));
 			weaAnim.Play("reload");
 			while (ammoWi.ammo < a.maxAmmo)
 			{
@@ -292,12 +275,13 @@ public class weaponSystem : MonoBehaviour
 		}
 		reloading = false;
 		animEnabled = true;
-		yield return null;
+		shootDelayTimer = 0.5f;
 	}
 	
 	////////////////////////SHOOT////////////////////////
 	void shoot()
 	{
+		StartCoroutine(shootTimer());
 		//animation
 		weaAnim.SetFloat("speed", 1 / a.shootTime);
 		weaAnim.Play("shoot");
@@ -306,55 +290,58 @@ public class weaponSystem : MonoBehaviour
 		{
 			for (int i = 0; i < a.bullCount; i++)
 			{
-				GameObject bull = Instantiate(a.bullPrefab, gunTip.position, gunTip.rotation);
+				//get object from its pool
+				GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+				//add random rotation
 				bull.transform.Rotate(Random.Range(a.randXRot, -a.randXRot), Random.Range(a.randYRot, -a.randYRot), 0);
+				//add velocity
 				Rigidbody bullRb = bull.GetComponent<Rigidbody>();
 				float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
 				bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
-				bulletAddon bullBAddon = bull.GetComponent<bulletAddon>();
-				bullBAddon.weaAsset = a;
-				shootedBulls.Add(bullBAddon);
+				//bullet addon
+				bull.GetComponent<bulletAddon>().wa = a;
 			}
 		}
 		else if (a.pattern)
 		{
-			GameObject bullet = Instantiate(a.bullPrefab, gunTip.position, gunTip.rotation);
-			
+			//get object from its pool
+			GameObject bullet = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+			//assign right rotation to bullet
 			RaycastHit bellHit;
 			if (Physics.Raycast(cam.position, cam.forward, out bellHit, 200, a.collidingLayers))
 				bullet.transform.LookAt(bellHit.point);
 			else
 				bullet.transform.LookAt(cam.position + cam.forward * 200); 
+			
+			//go trough each bullet
 			for (int i = 0; i < a.bullAmmount; i++)
 			{
 				GameObject bull = bullet.transform.GetChild(i).gameObject;
+				//add velocity
 				Rigidbody bullRb = bull.GetComponent<Rigidbody>();
 				float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
 				bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
-				bulletAddon bullBAddon = bull.GetComponent<bulletAddon>();
-				bullBAddon.weaAsset = a;
-				shootedBulls.Add(bullBAddon);
+				//bulletAddon
+				bull.GetComponent<bulletAddon>().wa = a;
 			}
 		}
-		else if (a.mele)
+		else if (!a.mele)
 		{
-			
-		}
-		else
-		{
-			Vector3 forceDir;
+			//get object from its pool
+			GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+			//set rotation
 			RaycastHit bellHit;
 			if (Physics.Raycast(cam.position, cam.forward, out bellHit, 200, a.collidingLayers))
-				forceDir = (bellHit.point - gunTip.position).normalized;
+				bull.transform.LookAt(bellHit.point);
 			else
-				forceDir = cam.forward;
-			GameObject bull = Instantiate(a.bullPrefab, gunTip.position, gunTip.rotation);
+				bull.transform.LookAt(cam.position + cam.forward * 200); 
+			//set velocity
 			Rigidbody bullRb = bull.GetComponent<Rigidbody>();
 			float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
-			bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * forceDir, ForceMode.Impulse);
-			bulletAddon bullBAddon = bull.GetComponent<bulletAddon>();
-			bullBAddon.weaAsset = a;
-			shootedBulls.Add(bullBAddon);
+			bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
+			//init bulletAddon
+			bull.GetComponent<bulletAddon>().wa = a;
+			//scater
 			if (a.scater)
 			{
 				bullRb.AddForce(bull.transform.up * (Random.Range(1, 3) == 1 ? a.yScater : -a.yScater));
@@ -362,16 +349,49 @@ public class weaponSystem : MonoBehaviour
 			}
 		}
 		
-		//kick
+		//kickback
 		if (a.useKick)
 		{
 			playerRb.velocity = new Vector3(playerRb.velocity.x, playerRb.velocity.y > 0.1f ? playerRb.velocity.y : 0, playerRb.velocity.z);
 			if (pm.realGrounded)
-				playerRb.AddForce(-new Vector3(cam.forward.x * a.powerOfKickGroundX, cam.forward.y * a.powerOfKickGroundY, cam.forward.z * a.powerOfKickGroundX), ForceMode.Impulse);
+				playerRb.AddForce(-new Vector3(cam.forward.x * a.kickPowerGround.x, cam.forward.y * a.kickPowerGround.y, cam.forward.z * a.kickPowerGround.x), ForceMode.Impulse);
 			else
-				playerRb.AddForce(-new Vector3(cam.forward.x * a.powerOfKickFlyX, cam.forward.y * a.powerOfKickFlyY, cam.forward.z * a.powerOfKickFlyX), ForceMode.Impulse);
-			pm.eddForce(2);
+				playerRb.AddForce(-new Vector3(cam.forward.x * a.kickPowerFly.x, cam.forward.y * a.kickPowerFly.y, cam.forward.z * a.kickPowerFly.x), ForceMode.Impulse);
 		}
+	}
+	void meleWeapon()
+	{
+		if (a.mele && attacking)
+		{
+			Collider[] contacts = Physics.OverlapBox(currWea.transform.position, a.meleRadius, currWea.transform.rotation, a.enemyLayer);
+			for (int i = 0; i < contacts.Length; i++)
+			{
+				if (attackedObjects.Contains(contacts[i].gameObject.transform.parent.gameObject))
+					continue;
+
+				if (contacts[i].gameObject.layer == 13)
+				{
+					attackedObjects.Add(contacts[i].gameObject.transform.parent.gameObject);
+					//deal damage
+					if (contacts[i].gameObject.CompareTag("enemyHead"))
+						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(a.bulletDamage*a.headDamagaMultiplayer, a.bulletDamage, a.bulletDamage*a.headDamagaMultiplayer);
+					else if (contacts[i].gameObject.CompareTag("enemyBody"))
+						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(a.bulletDamage, a.bulletDamage, a.bulletDamage*a.headDamagaMultiplayer);
+				}
+			}
+		}
+	}
+	
+	IEnumerator shootTimer()
+	{
+		animEnabled = false;
+		canChange = false;
+		attacking = true;
+		yield return new WaitForSeconds(a.shootDelay);
+		attackedObjects = new List<GameObject>();
+		attacking = false;
+		animEnabled = true;
+		canChange = true;
 	}
 	
 	///////////////////////EQUIP/////////////////////////
@@ -381,7 +401,6 @@ public class weaponSystem : MonoBehaviour
 		canShoot = false;
 		canChange = false;
 		animEnabled = false;
-		weaPos.transform.localRotation = Quaternion.identity;
 		
 		//slots
 		if (myWeapon != -1)
@@ -401,7 +420,7 @@ public class weaponSystem : MonoBehaviour
 		myWeapon = u;
 		a = assets[i];
 		
-		currWea = Instantiate(a.weaModel, weaPos.position, a.normalRotation);
+		currWea = Instantiate(a.weaModel, weaPos.position, Quaternion.identity);
 		currWea.transform.parent = weaPos;
 		weaPos.transform.localRotation = a.normalRotation;
 		ammoWi = currWea.GetComponent<weaponIndex>();
@@ -427,8 +446,6 @@ public class weaponSystem : MonoBehaviour
 		canShoot = false;
 		canChange = false;
 		animEnabled = false;
-		weaPos.transform.localRotation = Quaternion.identity;
-		Destroy(newWeapon.GetComponent<Rigidbody>());
 		
 		//unequiping
 		if (currWea != null)
@@ -439,14 +456,11 @@ public class weaponSystem : MonoBehaviour
 			Destroy(currWea);
 		}
 		
-		//slots
-		recalculateInventory();
-		allSlots[u].color = new Color32(255, 255, 255, 255);
-		
 		//init
 		a = assets[i];
 		myWeapon = u;
 		
+		Destroy(newWeapon.GetComponent<Rigidbody>());
 		currWea = newWeapon;
 		currWea.layer = 10;
 		ammoWi = currWea.GetComponent<weaponIndex>();
@@ -454,9 +468,13 @@ public class weaponSystem : MonoBehaviour
 		if (!a.mele)
 			gunTip = currWea.transform.GetChild(0);
 		
+		//slots
+		recalculateInventory();
+		allSlots[u].color = new Color32(255, 255, 255, 255);
+		
 		//moving
 		int delta = 0;
-		while ((newWeapon.transform.position - weaPos.transform.position).sqrMagnitude > 0.1f)
+		while ((newWeapon.transform.position - weaPos.transform.position).sqrMagnitude > 0.01f)
 		{
 			delta++;
 			newWeapon.transform.position = Vector3.Lerp(newWeapon.transform.position, weaPos.transform.position, delta/newWeaSpeed);
@@ -467,15 +485,16 @@ public class weaponSystem : MonoBehaviour
 		
 		//rotation
 		delta = 0;
-		while (Quaternion.Angle(currWea.transform.localRotation, a.normalRotation) > 0.1f)
+		while (Quaternion.Angle(currWea.transform.localRotation, Quaternion.identity) > 0.1f)
 		{
 			delta++;
-			currWea.transform.localRotation = Quaternion.Lerp(currWea.transform.localRotation, a.normalRotation, delta/newWeaSpeed);
+			currWea.transform.localRotation = Quaternion.Lerp(currWea.transform.localRotation, Quaternion.identity, delta/newWeaSpeed);
 			yield return 0;
 		}
 		weaPos.transform.localRotation = a.normalRotation;
 		
 		//animation
+		currWea.GetComponent<Animator>().enabled = true;
 		weaAnim = currWea.GetComponent<Animator>();
 		
 		canChange = true;
@@ -529,7 +548,32 @@ public class weaponSystem : MonoBehaviour
 	void MyUI()
 	{
 		if (a.useAmmo)
-			ammoText.text = ammoWi.ammo.ToString() + "/" + a.maxAmmo.ToString();
+		{
+			if (reloading)
+			{
+				float i = Mathf.Round(((float)3/(float)a.maxAmmo)*ammoWi.ammo);
+				switch(i)
+				{
+					case 0:
+						ammoText.text = "Reloading" + "/" + a.maxAmmo.ToString();
+						break;
+					case 1:
+						ammoText.text = ". Reloading" + "/" + a.maxAmmo.ToString();
+						break;
+					case 2:
+						ammoText.text = ".. Reloading" + "/" + a.maxAmmo.ToString();
+						break;
+					case 3:
+						ammoText.text = "... Reloading" + "/" + a.maxAmmo.ToString();
+						break;
+					default:
+						ammoText.text = ammoWi.ammo.ToString() + "/" + a.maxAmmo.ToString();
+						break;
+				}
+			}
+			else
+				ammoText.text = ammoWi.ammo.ToString() + "/" + a.maxAmmo.ToString();
+		}
 		else
 			ammoText.text = "Infinite";
 	}
@@ -539,33 +583,42 @@ public class weaponSystem : MonoBehaviour
 	{
 		if (animEnabled)
 		{
+			addResult = Vector3.zero;
+			
 			//sway
-			float xChange = Mathf.Clamp((Input.GetAxis("Mouse X") + (Input.GetAxisRaw("Horizontal") * new Vector3(playerRb.velocity.x, 0, playerRb.velocity.y).magnitude)), minAndMaxXSway.x, minAndMaxXSway.y);
-			float yChange = Mathf.Clamp((Input.GetAxis("Mouse Y") + (playerRb.velocity.y / 2)), minAndMaxYSway.x, minAndMaxYSway.y);
+			float xChange = Mathf.Clamp((Input.GetAxis("Mouse X") + (Input.GetAxisRaw("Horizontal") * (new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude/6))), minAndMaxXSway.x, minAndMaxXSway.y);
+			float yChange = Mathf.Clamp((Input.GetAxis("Mouse Y") + (playerRb.velocity.y/8)), minAndMaxYSway.x, minAndMaxYSway.y);
 			
 			//calculate target dir
-			Quaternion targetDir;
-			if (Mathf.Approximately(a.normalRotation.x, Quaternion.identity.x) && Mathf.Approximately(a.normalRotation.y, Quaternion.identity.y) && Mathf.Approximately(a.normalRotation.z, Quaternion.identity.z))
-				targetDir = Quaternion.AngleAxis(xChange*swayIntensity, -Vector3.up) * Quaternion.AngleAxis(yChange*swayIntensity, Vector3.right);
-			else
-				targetDir = Quaternion.AngleAxis(xChange*swayIntensity, -Vector3.up) * Quaternion.AngleAxis(yChange*swayIntensity, Vector3.right) * a.normalRotation;
+			Quaternion targetDir = Quaternion.AngleAxis(xChange*swayIntensity.x, -Vector3.up) * Quaternion.AngleAxis(yChange*swayIntensity.y, Vector3.right);
 			//go smooth to dir
-			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, targetDir, swaySpeed*Time.deltaTime);
-			
+			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, targetDir*a.normalRotation, swaySpeed*Time.deltaTime);
+			//add position sway to add result
+			addResult -= new Vector3(xChange*swayPosIntensity.x, yChange*swayPosIntensity.y, 0);
 			//deltas
 			if (delta1 > idleAnimCurveSpeed)
 				delta1 = 1;
-			
 			//curv movement
-			weaPos.Translate(-addResult * Time.deltaTime);	
-			addResult = new Vector3(0, idleAnimCurve.Evaluate(delta1/idleAnimCurveSpeed), 0);
-			weaPos.Translate(addResult * Time.deltaTime);
+			addResult += new Vector3(0, idleAnimCurve.Evaluate(delta1/idleAnimCurveSpeed)/16, 0);
+			//apply addResult to position
+			weaPos.localPosition = Vector3.Lerp(weaPos.localPosition, addResult+stableLocalWeaPos, Time.deltaTime*swaySpeed);
 			
 			delta1++;
 		}
 		else
 		{
-			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, a.normalRotation, returnRotationSpeed*Time.deltaTime);
+			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, a.normalRotation, returnSpeed*Time.deltaTime);
+			weaPos.localPosition = Vector3.Lerp(weaPos.localPosition, stableLocalWeaPos, returnSpeed*Time.deltaTime);
+		}
+	}
+	
+	void OnDrawGizmosSelected()
+	{
+		if (a.mele)
+		{
+			Gizmos.color = new Color(1, 0, 0, 0.75F);
+			Gizmos.matrix = Matrix4x4.TRS(currWea.transform.position, currWea.transform.rotation, new Vector3(1, 1, 1));
+			Gizmos.DrawWireCube(Vector3.zero, a.meleRadius);
 		}
 	}
 }

@@ -118,6 +118,7 @@
 -define:UNITY_POST_PROCESSING_STACK_V2
 -define:CSHARP_7_OR_LATER
 -define:CSHARP_7_3_OR_NEWER
+-r:"Assets/packages/AstarPathfindingProject/Plugins/DotNetZip/Pathfinding.Ionic.Zip.Reduced.dll"
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/Managed/UnityEngine/UnityEditor.CoreModule.dll"
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/Managed/UnityEngine/UnityEditor.DeviceSimulatorModule.dll"
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/Managed/UnityEngine/UnityEditor.DiagnosticsModule.dll"
@@ -326,6 +327,9 @@
 -r:"C:/unity projects/enjoyfullyShooter/enjoyfullyShooterWorkspace/Library/PackageCache/com.unity.nuget.newtonsoft-json@3.0.2/Runtime/Newtonsoft.Json.dll"
 -r:"C:/unity projects/enjoyfullyShooter/enjoyfullyShooterWorkspace/Library/PackageCache/com.unity.testtools.codecoverage@1.0.1/lib/ReportGenerator/ReportGeneratorMerged.dll"
 -r:"C:/unity projects/enjoyfullyShooter/enjoyfullyShooterWorkspace/Library/PackageCache/com.unity.visualscripting@1.7.6/Runtime/VisualScripting.Flow/Dependencies/NCalc/Unity.VisualScripting.Antlr3.Runtime.dll"
+-r:"Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProject.ref.dll"
+-r:"Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProjectEditor.ref.dll"
+-r:"Library/Bee/artifacts/1900b0aE.dag/PackageToolsEditor.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/Unity.2D.Sprite.Editor.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/Unity.EditorCoroutines.Editor.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/Unity.InternalAPIEditorBridge.003.ref.dll"
@@ -369,12 +373,14 @@
 -r:"Library/Bee/artifacts/1900b0aE.dag/Unity.VSCode.Editor.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEngine.UI.ref.dll"
-"Assets/QuickOutline/Scripts/Outline.cs"
-"Assets/scripts/enemy/enemyAI.cs"
-"Assets/scripts/enemy/enemyFall.cs"
+"Assets/packages/QuickOutline/Scripts/Outline.cs"
+"Assets/scripts/enemy/hpTest.cs"
 "Assets/scripts/level/doorSystem.cs"
 "Assets/scripts/level/elevatorSystem.cs"
 "Assets/scripts/level/level.cs"
+"Assets/scripts/other/ObjectPools.cs"
+"Assets/scripts/other/test.cs"
+"Assets/scripts/other/textBehavior.cs"
 "Assets/scripts/player/bulletAddon.cs"
 "Assets/scripts/player/graplingGun.cs"
 "Assets/scripts/player/NormalCameraShake.cs"
@@ -383,7 +389,6 @@
 "Assets/scripts/player/weaponAsset.cs"
 "Assets/scripts/player/weaponIndex.cs"
 "Assets/scripts/player/weaponSystem.cs"
-"Assets/scripts/test.cs"
 -langversion:9.0
 
 /deterministic

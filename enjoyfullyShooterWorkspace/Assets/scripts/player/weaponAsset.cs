@@ -11,10 +11,15 @@ public class weaponAsset : ScriptableObject
 	public bool multiShoot;
 	
 	[Header("bullet")]
+	public LayerMask enemyLayer;
 	public LayerMask collidingLayers;
 	public List<int> collidingLayers1;
 	public float bulletLifeTime;
 	public GameObject bullPrefab;
+	
+	[Header("damage")]
+	public float bulletDamage;
+	public float headDamagaMultiplayer;
 	
 	[Header("ModelAndAnimation")]
 	public GameObject weaModel;
@@ -27,10 +32,8 @@ public class weaponAsset : ScriptableObject
 	public Sprite mySprite;
 	
 	[Header("kickback")]
-	public float powerOfKickFlyY;
-	public float powerOfKickGroundY;
-	public float powerOfKickFlyX;
-	public float powerOfKickGroundX;
+	public Vector2 kickPowerFly;
+	public Vector2 kickPowerGround;
 	public bool useKick;
 	
 	[Header("explosion")]
@@ -62,14 +65,22 @@ public class weaponAsset : ScriptableObject
 	public float bullAmmount;
 	public bool pattern;
 	
+	[Header("laser")]
+	public bool laser;
+	
+	[Header("mele")]
+	public bool mele;
+	public Vector3 meleRadius;
+	public float handReturnSpeed;
+	
 	[Header("scater")]
 	public float yScater;
 	public float xScater;
 	public bool scater;
 	
-	[Header("mele")]
-	public bool mele;
-	public Vector3 meleRadius;
+	[Header("rebound")]
+	public int reboundCount;
+	public bool rebound;
 	
 	[Header("ammo")]
 	public float reloadTime;
@@ -95,5 +106,8 @@ public class weaponAsset : ScriptableObject
 			unequipTime = 0.1f;
 		if (shootTime == 0)
 			shootTime = 0.1f;
+		
+		if (normalRotation.x == 0 && normalRotation.y == 0 && normalRotation.z == 0)
+			normalRotation = new Quaternion(0, 0, 0, 1);
 	}
 }
