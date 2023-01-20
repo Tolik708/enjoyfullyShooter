@@ -47,12 +47,13 @@ public class bulletAddon : MonoBehaviour
 			{
 				detectCount = wa.reboundCount-1;
 				rebound(col.contacts[0].normal);
+				dealDamage(col);
 			}
 			else if (detectCount > 0)
 			{
 				detectCount--;
 				rebound(col.contacts[0].normal);
-				
+				dealDamage(col);
 			}
 			else
 				StartCoroutine(destroyer());
@@ -60,17 +61,21 @@ public class bulletAddon : MonoBehaviour
 		//destroy if collide with certain layers
 		else if (wa.collidingLayers1.Contains(col.gameObject.layer))
 		{
-			//deal damage
-			if (col.gameObject.CompareTag("enemyBody"))
-				col.gameObject.transform.parent.GetComponent<hpTest>().takeDamage(wa.bulletDamage, wa.bulletDamage, wa.bulletDamage*wa.headDamagaMultiplayer);
-			else if (col.gameObject.CompareTag("enemyHead"))
-				col.gameObject.transform.parent.GetComponent<hpTest>().takeDamage(wa.bulletDamage*wa.headDamagaMultiplayer, wa.bulletDamage, wa.bulletDamage*wa.headDamagaMultiplayer);
+			dealDamage(col);
 			
 			me.GetComponent<SphereCollider>().enabled = false;
 			me.GetComponent<MeshRenderer>().enabled = false;
 			
 			StartCoroutine(destroyer());
 		}
+	}
+	
+	void dealDamage(Collision col)
+	{
+		if (col.gameObject.CompareTag("enemyBody"))
+			col.gameObject.transform.parent.GetComponent<hpTest>().takeDamage(false, wa);
+		else if (col.gameObject.CompareTag("enemyHead"))
+			col.gameObject.transform.parent.GetComponent<hpTest>().takeDamage(true, wa);
 	}
 	
 	IEnumerator destroyer()
@@ -87,6 +92,6 @@ public class bulletAddon : MonoBehaviour
 	
 	void rebound(Vector3 normalDir)
 	{
-		myRb.velocity = (lastVelocity-((2*Vector3.Dot(lastVelocity, normalDir.normalized))*normalDir.normalized));
+		myRb.velocity = (lastVelocity-((2*Vector3.Dot(lastVelocity, normalDir))*normalDir));
 	}
 }

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Random=UnityEngine.Random;
+using smoothMover;
 
 public class weaponSystem : MonoBehaviour
 {
@@ -65,6 +66,8 @@ public class weaponSystem : MonoBehaviour
 	private KeyCode[] keyCodes = new KeyCode []{ KeyCode.Alpha0, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4, KeyCode.Alpha5, KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9 };
 	
 	[Header("animation")]
+	public inverseKinematics arm;
+	public GameObject myArm;
 	public Transform weaPos;
 	public Vector3 stableLocalWeaPos;
 	public float returnSpeed;
@@ -81,8 +84,7 @@ public class weaponSystem : MonoBehaviour
 	//curves
 	public AnimationCurve idleAnimCurve;
 	public float idleAnimCurveSpeed;
-	private Vector3 addResult = Vector3.zero;
-	private int delta1 = 1;
+	private float ticks;
 	
 	void Start()
 	{
@@ -283,69 +285,114 @@ public class weaponSystem : MonoBehaviour
 	{
 		StartCoroutine(shootTimer());
 		//animation
-		weaAnim.SetFloat("speed", 1 / a.shootTime);
-		weaAnim.Play("shoot");
+		if (a.haveAttackAnim || !a.mele)
+		{
+			weaAnim.SetFloat("speed", 1 / a.shootTime);
+			weaAnim.Play("shoot");
+		}
 		
-		if (a.multiBull)
+		if (a.rayCast)
 		{
-			for (int i = 0; i < a.bullCount; i++)
+			switch (a.weaponType)
 			{
-				//get object from its pool
-				GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
-				//add random rotation
-				bull.transform.Rotate(Random.Range(a.randXRot, -a.randXRot), Random.Range(a.randYRot, -a.randYRot), 0);
-				//add velocity
-				Rigidbody bullRb = bull.GetComponent<Rigidbody>();
-				float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
-				bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
-				//bullet addon
-				bull.GetComponent<bulletAddon>().wa = a;
+				case weaponAsset.weaType.multiBullet_likeShotgun:
+				{
+					
+					break;
+				}
+				case weaponAsset.weaType.pattern:
+				{
+					
+					break;
+				}
+				case weaponAsset.weaType.simple:
+				{
+					GameObject trail = ObjectPools.instance.getFromPool(a.trail, gunTip.position, gunTip.rotation);
+					break;
+				}
+				default:
+					Debug.Log("raycasting with this weapontype imposible");
+					break;
 			}
 		}
-		else if (a.pattern)
+		else
 		{
-			//get object from its pool
-			GameObject bullet = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
-			//assign right rotation to bullet
-			RaycastHit bellHit;
-			if (Physics.Raycast(cam.position, cam.forward, out bellHit, 200, a.collidingLayers))
-				bullet.transform.LookAt(bellHit.point);
-			else
-				bullet.transform.LookAt(cam.position + cam.forward * 200); 
-			
-			//go trough each bullet
-			for (int i = 0; i < a.bullAmmount; i++)
+			switch (a.weaponType)
 			{
-				GameObject bull = bullet.transform.GetChild(i).gameObject;
-				//add velocity
-				Rigidbody bullRb = bull.GetComponent<Rigidbody>();
-				float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
-				bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
-				//bulletAddon
-				bull.GetComponent<bulletAddon>().wa = a;
-			}
-		}
-		else if (!a.mele)
-		{
-			//get object from its pool
-			GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
-			//set rotation
-			RaycastHit bellHit;
-			if (Physics.Raycast(cam.position, cam.forward, out bellHit, 200, a.collidingLayers))
-				bull.transform.LookAt(bellHit.point);
-			else
-				bull.transform.LookAt(cam.position + cam.forward * 200); 
-			//set velocity
-			Rigidbody bullRb = bull.GetComponent<Rigidbody>();
-			float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
-			bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
-			//init bulletAddon
-			bull.GetComponent<bulletAddon>().wa = a;
-			//scater
-			if (a.scater)
-			{
-				bullRb.AddForce(bull.transform.up * (Random.Range(1, 3) == 1 ? a.yScater : -a.yScater));
-				bullRb.AddForce(bull.transform.right * (Random.Range(1, 3) == 1 ? a.xScater : -a.xScater));
+				case weaponAsset.weaType.multiBullet_likeShotgun:
+				{
+					for (int i = 0; i < a.bullCount; i++)
+					{
+						//get object from its pool
+						GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+						//add random rotation
+						bull.transform.Rotate(Random.Range(a.randXRot, -a.randXRot), Random.Range(a.randYRot, -a.randYRot), 0);
+						//add velocity
+						Rigidbody bullRb = bull.GetComponent<Rigidbody>();
+						float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
+						bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
+						//bullet addon
+						bull.GetComponent<bulletAddon>().wa = a;
+					}
+					break;
+				}
+				case weaponAsset.weaType.mele:
+				{
+					StartCoroutine(meleAtack());
+					break;
+				}
+				case weaponAsset.weaType.pattern:
+				{
+					//get object from its pool
+					GameObject bullet = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+					//assign right rotation to bullet
+					RaycastHit bellHit;
+					if (Physics.Raycast(cam.position, cam.forward, out bellHit, 200, a.collidingLayers))
+						bullet.transform.LookAt(bellHit.point);
+					else
+						bullet.transform.LookAt(cam.position + cam.forward * 200); 
+					
+					//go trough each bullet
+					for (int i = 0; i < a.bullAmmount; i++)
+					{
+						GameObject bull = bullet.transform.GetChild(i).gameObject;
+						//add velocity
+						Rigidbody bullRb = bull.GetComponent<Rigidbody>();
+						float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
+						bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
+						//bulletAddon
+						bull.GetComponent<bulletAddon>().wa = a;
+					}
+					break;
+				}
+				case weaponAsset.weaType.laser:
+				{
+					break;
+				}
+				case weaponAsset.weaType.simple:
+				{
+					//get object from its pool
+					GameObject bull = ObjectPools.instance.getFromPool(a.bullPrefab, gunTip.position, gunTip.rotation);
+					//set rotation
+					RaycastHit bellHit;
+					if (Physics.SphereCast(cam.position, a.helpStrength, cam.forward, out bellHit, 200, a.collidingLayers))
+						bull.transform.LookAt(bellHit.point);
+					else
+						bull.transform.LookAt(cam.position + cam.forward * 200); 
+					//set velocity
+					Rigidbody bullRb = bull.GetComponent<Rigidbody>();
+					float playerSpeed = new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude;
+					bullRb.AddForce(((a.randSpeed == false ? a.bullSpeed : Random.Range(a.minRandSpeed, a.minRandSpeed)) + playerSpeed) * bull.transform.forward, ForceMode.Impulse);
+					//init bulletAddon
+					bull.GetComponent<bulletAddon>().wa = a;
+					//scater
+					if (a.scater)
+					{
+						bullRb.AddForce(bull.transform.up * (Random.Range(1, 3) == 1 ? a.yScater : -a.yScater));
+						bullRb.AddForce(bull.transform.right * (Random.Range(1, 3) == 1 ? a.xScater : -a.xScater));
+					}
+					break;
+				}
 			}
 		}
 		
@@ -369,14 +416,14 @@ public class weaponSystem : MonoBehaviour
 				if (attackedObjects.Contains(contacts[i].gameObject.transform.parent.gameObject))
 					continue;
 
-				if (contacts[i].gameObject.layer == 13)
+				if (a.enemyLayer == (a.enemyLayer | (1 << contacts[i].gameObject.layer)))
 				{
 					attackedObjects.Add(contacts[i].gameObject.transform.parent.gameObject);
 					//deal damage
 					if (contacts[i].gameObject.CompareTag("enemyHead"))
-						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(a.bulletDamage*a.headDamagaMultiplayer, a.bulletDamage, a.bulletDamage*a.headDamagaMultiplayer);
+						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(true, a);
 					else if (contacts[i].gameObject.CompareTag("enemyBody"))
-						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(a.bulletDamage, a.bulletDamage, a.bulletDamage*a.headDamagaMultiplayer);
+						contacts[i].gameObject.transform.parent.gameObject.GetComponent<hpTest>().takeDamage(false, a);
 				}
 			}
 		}
@@ -386,12 +433,70 @@ public class weaponSystem : MonoBehaviour
 	{
 		animEnabled = false;
 		canChange = false;
-		attacking = true;
 		yield return new WaitForSeconds(a.shootDelay);
-		attackedObjects = new List<GameObject>();
-		attacking = false;
 		animEnabled = true;
 		canChange = true;
+		yield return null;
+	}
+	
+	IEnumerator meleAtack()
+	{
+		attacking = true;
+		
+		//calculating attack time
+		float toPointTime = a.shootDelay/3; //25%
+		float recoveryTime = a.shootDelay/1.5f; //75%
+		
+		RaycastHit hat;
+		Vector3 toPoint;
+		weaPos.localRotation = Quaternion.identity;
+		Quaternion startWeaRotation = weaPos.localRotation;
+		
+		if (!Physics.Raycast(cam.position, cam.forward, out hat, a.maxMeleDist, a.collidingLayers))
+		{
+			toPoint = cam.InverseTransformPoint(cam.position + cam.forward * a.maxMeleDist);
+			if (a.distanceInfluence)
+			{
+				toPointTime *= a.distanceInfluencClamp.y;
+				recoveryTime *= a.distanceInfluencClamp.y;
+			}
+		}
+		else
+		{
+			toPoint = cam.InverseTransformPoint(hat.point);
+			if (a.distanceInfluence)
+			{
+				float percent = Mathf.Clamp(1-((((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude - (hat.point-cam.position).sqrMagnitude)/((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude), a.distanceInfluencClamp.x, a.distanceInfluencClamp.y);
+				toPointTime *= percent;
+				recoveryTime *= percent;
+			}
+		}
+		
+		float recoveryTimer = recoveryTime;
+		float toPointTimer = toPointTime;
+		
+		while(toPointTimer > 0)
+		{
+			Quaternion lookRot = Quaternion.LookRotation((toPoint-weaPos.localPosition), Vector3.up);
+			weaPos.localPosition = Vector3.Lerp(stableLocalWeaPos, toPoint, 1-(toPointTimer/toPointTime));
+			weaPos.localRotation = Quaternion.Lerp(startWeaRotation, lookRot, 1-(toPointTimer/toPointTime)) * Quaternion.Euler(0, -90, 0);
+			toPointTimer -= Time.deltaTime;
+			yield return null;
+		}
+		Quaternion endWeaRotation = weaPos.localRotation * Quaternion.Euler(0, 90, 0);
+		while(recoveryTimer > 0)
+		{
+			weaPos.localPosition = Vector3.Lerp(toPoint, stableLocalWeaPos, 1-(recoveryTimer/recoveryTime));
+			weaPos.localRotation = Quaternion.Lerp(endWeaRotation, startWeaRotation, 1-(recoveryTimer/recoveryTime)) * Quaternion.Euler(0, -90, 0);
+			recoveryTimer -= Time.deltaTime;
+			yield return null;
+		}
+		weaPos.localRotation *= Quaternion.Euler(0, 90, 0);
+		
+		
+		attacking = false;
+		attackedObjects = new List<GameObject>();
+		yield return null;
 	}
 	
 	///////////////////////EQUIP/////////////////////////
@@ -427,6 +532,15 @@ public class weaponSystem : MonoBehaviour
 		ammoWi.ammo = (int)myWeapons[myWeapon].y;
 		if (!a.mele)
 			gunTip = currWea.transform.GetChild(0);
+		
+		if (a.useArm)
+		{
+			myArm.SetActive(true);
+			arm.target = currWea.transform.Find("armTarget");;
+			arm.init();
+		}
+		else
+			myArm.SetActive(false);
 		
 		//animation
 		weaAnim = currWea.GetComponent<Animator>();
@@ -581,9 +695,16 @@ public class weaponSystem : MonoBehaviour
 	////////////////////////////////ANIMATION///////////////////////
 	void weaAnimation()
 	{
+		Vector3 addResult = new Vector3();
 		if (animEnabled)
 		{
 			addResult = Vector3.zero;
+			ticks += 1*Time.deltaTime;
+			//deltas
+			if (ticks > idleAnimCurveSpeed)
+				ticks = 1;
+			//curv movement
+			addResult += new Vector3(0, idleAnimCurve.Evaluate(ticks/idleAnimCurveSpeed)/16, 0);
 			
 			//sway
 			float xChange = Mathf.Clamp((Input.GetAxis("Mouse X") + (Input.GetAxisRaw("Horizontal") * (new Vector3(playerRb.velocity.x, 0, playerRb.velocity.z).magnitude/6))), minAndMaxXSway.x, minAndMaxXSway.y);
@@ -595,20 +716,18 @@ public class weaponSystem : MonoBehaviour
 			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, targetDir*a.normalRotation, swaySpeed*Time.deltaTime);
 			//add position sway to add result
 			addResult -= new Vector3(xChange*swayPosIntensity.x, yChange*swayPosIntensity.y, 0);
-			//deltas
-			if (delta1 > idleAnimCurveSpeed)
-				delta1 = 1;
-			//curv movement
-			addResult += new Vector3(0, idleAnimCurve.Evaluate(delta1/idleAnimCurveSpeed)/16, 0);
+			
 			//apply addResult to position
 			weaPos.localPosition = Vector3.Lerp(weaPos.localPosition, addResult+stableLocalWeaPos, Time.deltaTime*swaySpeed);
 			
-			delta1++;
 		}
 		else
 		{
-			weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, a.normalRotation, returnSpeed*Time.deltaTime);
-			weaPos.localPosition = Vector3.Lerp(weaPos.localPosition, stableLocalWeaPos, returnSpeed*Time.deltaTime);
+			if (!attacking)
+			{
+				weaPos.localRotation = Quaternion.Slerp(weaPos.localRotation, a.normalRotation, returnSpeed*Time.deltaTime);
+				weaPos.localPosition = Vector3.Lerp(weaPos.localPosition, stableLocalWeaPos, returnSpeed*Time.deltaTime);
+			}
 		}
 	}
 	

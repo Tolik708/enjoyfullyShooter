@@ -12,25 +12,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 381f10d0c40a2c648a7c233fe8fa7db6, type: 3}
   m_Name: AT-50
   m_EditorClassIdentifier: 
+  weaponType: 0
   shootDelay: 0.2
+  helpStrength: 0.2
   multiShoot: 1
+  rayCast: 0
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
   collidingLayers:
     serializedVersion: 2
     m_Bits: 15297
   collidingLayers1: 00000000060000000700000008000000090000000b0000000c0000000d000000
   bulletLifeTime: 10
   bullPrefab: {fileID: 2320200738495290215, guid: 12d7f8e9153a9a941846ce3f60a7740f, type: 3}
+  bulletDamage: 0
+  headDamageMultiplayer: 0
+  randomDamage: 0
+  minMaxDamage: {x: 0, y: 0}
   weaModel: {fileID: 5983098372404386157, guid: 03408fd4f51ceaf44a056f6dd4c7d7bb, type: 3}
   normalRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   myTexture: {fileID: 2800000, guid: 87418b6650240d948a511db6d90150e4, type: 3}
   unequipTime: 0.5
   equipTime: 0.5
   shootTime: 0.1
+  useArm: 0
   mySprite: {fileID: 0}
-  powerOfKickFlyY: 0
-  powerOfKickGroundY: 0
-  powerOfKickFlyX: 0
-  powerOfKickGroundX: 0
+  kickPowerFly: {x: 0, y: 0}
+  kickPowerGround: {x: 0, y: 0}
   useKick: 0
   explosionLayers:
     serializedVersion: 2
@@ -53,11 +62,16 @@ MonoBehaviour:
   multiBull: 0
   bullAmmount: 0
   pattern: 0
+  laser: 0
+  mele: 0
+  haveAttackAnim: 1
+  distanceInfluence: 0
+  distanceInfluencClamp: {x: 0, y: 0}
+  meleRadius: {x: 0, y: 0, z: 0}
+  maxMeleDist: 0
   yScater: 2
   xScater: 2
   scater: 1
-  mele: 0
-  meleRadius: {x: 0, y: 0, z: 0}
   reboundCount: 5
   rebound: 1
   reloadTime: 1.5

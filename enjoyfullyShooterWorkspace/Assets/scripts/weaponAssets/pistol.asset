@@ -14,14 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shootDelay: 0.5
   multiShoot: 0
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
   collidingLayers:
     serializedVersion: 2
     m_Bits: 15296
   collidingLayers1: 060000000700000008000000090000000b0000000c0000000d000000
   bulletLifeTime: 10
-  bulletDamage: 1
-  headDamagaMultiplayer: 2
   bullPrefab: {fileID: 2320200738495290215, guid: 12d7f8e9153a9a941846ce3f60a7740f, type: 3}
+  bulletDamage: 1
+  headDamageMultiplayer: 2
   weaModel: {fileID: 751138596675612046, guid: ea1f89354d979c34c9f4557acf6b21d6, type: 3}
   normalRotation: {x: 0, y: 0.70710677, z: 0, w: 0.70710677}
   myTexture: {fileID: 2800000, guid: 3de61b78ea2fe0246aa2bbd32c3811c9, type: 3}
@@ -56,6 +59,7 @@ MonoBehaviour:
   laser: 0
   mele: 0
   meleRadius: {x: 0, y: 0, z: 0}
+  handReturnSpeed: 0
   yScater: 0
   xScater: 0
   scater: 0
