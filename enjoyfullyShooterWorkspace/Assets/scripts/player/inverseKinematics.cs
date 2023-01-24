@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 public class inverseKinematics : MonoBehaviour
 {
@@ -10,7 +12,9 @@ public class inverseKinematics : MonoBehaviour
     public int chainLength;
 	
 	public float delta;
-	public int iterations;
+	public int maxIterations;
+	[Range(0, 1)]
+	public float snapBackStrength;
 	
 	//bones
 	private Transform[] bones;
@@ -21,8 +25,8 @@ public class inverseKinematics : MonoBehaviour
 	private Vector3[] startDir;
 	private Quaternion[] startRot;
 	private Quaternion startTargetRot;
-	private Quaternion startRotRoot;
 	
+	private Transform rootParent;
 	private Vector3 lastTargetPos;
 	private Vector3 lastPolePos;
 	private float completeLength;
@@ -36,6 +40,9 @@ public class inverseKinematics : MonoBehaviour
 	
 	public void init()
 	{
+		if (target == null)
+			return;
+		
 		//length of hole arm
 		completeLength = 0;
 		
@@ -47,28 +54,35 @@ public class inverseKinematics : MonoBehaviour
 		
 		startDir = new Vector3[boneAmm];
 		startRot = new Quaternion[boneAmm];
-		startTargetRot = target.localRotation;
-		startRotRoot = transform.rotation;
+		startTargetRot = GetRotationRootSpace(target);
 		
+		
+		//init root parent
 		Transform curr = transform;
 		for (int i = chainLength; i >= 0; i--)
 		{
+			rootParent = curr;
+			curr = curr.parent;
+		}
+		
+		curr = transform;
+		//init other parts for bones
+		for (int i = chainLength; i >= 0; i--)
+		{
 			bones[i] = curr;
-			startRot[i] = curr.rotation;
+			startRot[i] = GetRotationRootSpace(curr);
 			
 			//if not last bone in arm
 			if (i != chainLength)
 			{
-				startDir[i] = bones[i+1].position - curr.position;
-				bonesLength[i] = (bones[i+1].position - curr.position).magnitude;
+				startDir[i] = GetPositionRootSpace(bones[i+1]) - GetPositionRootSpace(curr);
+				bonesLength[i] = startDir[i].magnitude;
 				completeLength += bonesLength[i];
 			}
 			else
-			{
-				startDir[i] = target.position - curr.position;
-			}
+				startDir[i] = GetPositionRootSpace(target) - GetPositionRootSpace(curr);
 			
-			curr = curr.parent.transform;
+			curr = curr.parent;
 		}
 	}
 	
@@ -77,6 +91,7 @@ public class inverseKinematics : MonoBehaviour
 		if (target == null)
 			return;
 		
+		//check if target or/and pole changed
 		if (pole != null && pole.position == lastPolePos && lastTargetPos == target.position)
 			return;
 		
@@ -85,39 +100,47 @@ public class inverseKinematics : MonoBehaviour
 		
 		//get postions
 		for (int i = 0; i < boneAmm; i++)
-			startPos[i] = bones[i].position;
-		
-		Quaternion rootRot = (bones[0].parent != null)? bones[0].parent.rotation : Quaternion.identity;
-		Quaternion rootRotDiff = rootRot * Quaternion.Inverse(startRotRoot);
-		
-		//if you do not need to do any hard rotations
-		if ((target.position - bones[0].position).sqrMagnitude > completeLength*completeLength)
+			startPos[i] = GetPositionRootSpace(bones[i]);
+
+		for (int twice = 0; twice < 2; twice++)
 		{
-			Vector3 dir = (target.position - bones[0].position).normalized;
-			for (int i = 1; i < boneAmm; i++)
-				startPos[i] = bones[i-1].position + dir * bonesLength[i-1];
-		}
-		else
-		{
-			for (int i = 0; i < iterations; i++)
+			//variable for readability
+			Vector3 targetPosition = GetPositionRootSpace(target);
+				
+			//if you do not need to do any hard rotations because target is far
+			if ((targetPosition - GetPositionRootSpace(bones[0])).sqrMagnitude >= completeLength*completeLength)
 			{
-				//back
-				for (int u = chainLength; u > 0; u--)
+				Vector3 dir = (targetPosition - startPos[0]).normalized;
+				for (int i = 1; i < boneAmm; i++)
+					startPos[i] = startPos[i-1] + (dir * bonesLength[i-1]);
+			}
+			else
+			{
+				for (int i = 0; i < chainLength; i++)
+					startPos[i+1] = Vector3.Lerp(startPos[i+1], startPos[i] - startDir[i], snapBackStrength);
+			
+				for (int iteration = 0; iteration < maxIterations; iteration++)
 				{
-					if (u == chainLength)
-						startPos[u] = target.position;
-					else
-						startPos[u] = startPos[u+1] + (startPos[u]-startPos[u+1]).normalized * bonesLength[u];
+					//back
+					for (int i = chainLength; i > 0; i--)
+					{
+						if (i == chainLength)
+							startPos[i] = targetPosition;
+						else
+							startPos[i] = startPos[i+1] + (startPos[i]-startPos[i+1]).normalized * bonesLength[i];
+					}
+					
+					//forward
+					for (int i = 1; i < boneAmm; i++)
+						startPos[i] = startPos[i-1] + (startPos[i]-startPos[i-1]).normalized * bonesLength[i-1];
+					
+					//if so close, so no need for other iterations
+					if ((startPos[chainLength] - targetPosition).sqrMagnitude < delta*delta)
+					{
+						//Debug.Log("iterations needed: " + iteration.ToString());
+						break;
+					}
 				}
-				
-				//forward
-				for (int u = 1; u < boneAmm; u++)
-					startPos[u] = startPos[u-1] + (startPos[u]-startPos[u-1]).normalized * bonesLength[u-1];
-				
-				
-				//if so close, so no need for other iterations
-				if ((target.position-startPos[chainLength]).sqrMagnitude < delta*delta)
-					break;
 			}
 			
 			if (pole != null)
@@ -125,29 +148,60 @@ public class inverseKinematics : MonoBehaviour
 				for (int i = 1; i < chainLength; i++)
 				{
 					Plane plane = new Plane(startPos[i+1]-startPos[i-1], startPos[i-1]);
-					Vector3 projectedPole = plane.ClosestPointOnPlane(pole.position);
+					Vector3 projectedPole = plane.ClosestPointOnPlane(GetPositionRootSpace(pole));
 					Vector3 projectedBone = plane.ClosestPointOnPlane(startPos[i]);
 					float angle = Vector3.SignedAngle(projectedBone - startPos[i-1], projectedPole - startPos[i-1], plane.normal);
 					startPos[i] = Quaternion.AngleAxis(angle, plane.normal) * (startPos[i]-startPos[i-1]) + startPos[i-1];
 				}
 			}
-		}
-		
-		//set rotations
-		for (int i = 0; i < boneAmm; i++)
-		{
-			if (i == chainLength)
-				bones[i].rotation = target.localRotation * Quaternion.Inverse(startTargetRot) * startRot[i];
-			else
-				bones[i].rotation = Quaternion.FromToRotation(startDir[i], startPos[i+1] - startPos[i]) * startRot[i];
+				
+			//set rotations & positions
+			for (int i = 0; i < boneAmm; i++)
+			{
+				if (i == chainLength)
+					SetRotationRootSpace(bones[i], Quaternion.Inverse(GetRotationRootSpace(target)) * startTargetRot * Quaternion.Inverse(startRot[i]));
+				else
+					SetRotationRootSpace(bones[i], Quaternion.FromToRotation(startDir[i], startPos[i+1] - startPos[i]) * Quaternion.Inverse(startRot[i]));
+				
+				SetPositionRootSpace(bones[i], startPos[i]);
+			}
 		}
 		
 		lastTargetPos = target.position;
-		
-		//set positions
-		for (int i = 0; i < boneAmm; i++)
-			bones[i].position = startPos[i];
 	}
+	
+	private Vector3 GetPositionRootSpace(Transform current)
+    {
+        if (rootParent == null)
+            return current.position;
+        else
+            return Quaternion.Inverse(rootParent.rotation) * (current.position - rootParent.position);
+    }
+
+    private void SetPositionRootSpace(Transform current, Vector3 position)
+    {
+        if (rootParent == null)
+            current.position = position;
+        else
+            current.position = rootParent.rotation * position + rootParent.position;
+    }
+
+    private Quaternion GetRotationRootSpace(Transform current)
+    {
+        //inverse(after) * before => rot: before -> after
+        if (rootParent == null)
+            return current.rotation;
+        else
+            return Quaternion.Inverse(current.rotation) * rootParent.rotation;
+    }
+
+    private void SetRotationRootSpace(Transform current, Quaternion rotation)
+    {
+        if (rootParent == null)
+            current.rotation = rotation;
+        else
+            current.rotation = rootParent.rotation * rotation;
+    }
 	
 	void OnDrawGizmos()
 	{

@@ -5,14 +5,16 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 using Random=UnityEngine.Random;
-using smoothMover;
 
 public class weaponSystem : MonoBehaviour
 {
+	public float debug;
+	
 	[Header("General")]
 	public player pm;
 	public weaponAsset[] assets;
 	public weaponAsset a;
+	public smoothMover sm;
 	
 	[Header("shooting")]
 	public Rigidbody playerRb;
@@ -192,7 +194,7 @@ public class weaponSystem : MonoBehaviour
 		//throwing
 		if (Input.GetKeyDown(throwKey))
 		{
-			if(myWeapon > 0)
+			if(myWeapon > 0 && canChange)
 			{
 				Throw();
 			}
@@ -336,9 +338,14 @@ public class weaponSystem : MonoBehaviour
 					}
 					break;
 				}
-				case weaponAsset.weaType.mele:
+				case weaponAsset.weaType.fist:
 				{
-					StartCoroutine(meleAtack());
+					StartCoroutine(fistAtack());
+					break;
+				}
+				case weaponAsset.weaType.sword:
+				{
+					StartCoroutine(swordAttack());
 					break;
 				}
 				case weaponAsset.weaType.pattern:
@@ -439,7 +446,7 @@ public class weaponSystem : MonoBehaviour
 		yield return null;
 	}
 	
-	IEnumerator meleAtack()
+	IEnumerator fistAtack()
 	{
 		attacking = true;
 		
@@ -448,50 +455,54 @@ public class weaponSystem : MonoBehaviour
 		float recoveryTime = a.shootDelay/1.5f; //75%
 		
 		RaycastHit hat;
+		//point to what we are going
 		Vector3 toPoint;
-		weaPos.localRotation = Quaternion.identity;
-		Quaternion startWeaRotation = weaPos.localRotation;
 		
+		//if not hited anything
 		if (!Physics.Raycast(cam.position, cam.forward, out hat, a.maxMeleDist, a.collidingLayers))
-		{
 			toPoint = cam.InverseTransformPoint(cam.position + cam.forward * a.maxMeleDist);
-			if (a.distanceInfluence)
-			{
-				toPointTime *= a.distanceInfluencClamp.y;
-				recoveryTime *= a.distanceInfluencClamp.y;
-			}
-		}
+		
+		//if hit in something
 		else
 		{
+			//to local position of camera
 			toPoint = cam.InverseTransformPoint(hat.point);
 			if (a.distanceInfluence)
 			{
+				//calculate time percent (0-1) of distance we need
 				float percent = Mathf.Clamp(1-((((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude - (hat.point-cam.position).sqrMagnitude)/((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude), a.distanceInfluencClamp.x, a.distanceInfluencClamp.y);
+				//if distance to target small we want to attack upper
+				if (percent < 0.5f)
+				{
+					toPoint += Vector3.up * 0.5f;
+					percent = Mathf.Clamp(1-((((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude - (hat.point-cam.position).sqrMagnitude)/((cam.position + cam.forward * a.maxMeleDist)-cam.position).sqrMagnitude), a.distanceInfluencClamp.x, a.distanceInfluencClamp.y);
+				}
+				//apply time percentage
 				toPointTime *= percent;
 				recoveryTime *= percent;
 			}
 		}
 		
-		float recoveryTimer = recoveryTime;
-		float toPointTimer = toPointTime;
+		smoothMover.instance ins = sm.MoveObj(weaPos, toPoint, toPointTime, smoothMover.moveType.stable);
+		ins.global(false);
+		while (ins.active)
+			yield return 0;
+			
+		smoothMover.instance ins1 = sm.MoveObj(weaPos, stableLocalWeaPos, recoveryTime, smoothMover.moveType.stable);
+		ins1.global(false);
+		while(ins1.active)
+			yield return 0;
 		
-		while(toPointTimer > 0)
-		{
-			Quaternion lookRot = Quaternion.LookRotation((toPoint-weaPos.localPosition), Vector3.up);
-			weaPos.localPosition = Vector3.Lerp(stableLocalWeaPos, toPoint, 1-(toPointTimer/toPointTime));
-			weaPos.localRotation = Quaternion.Lerp(startWeaRotation, lookRot, 1-(toPointTimer/toPointTime)) * Quaternion.Euler(0, -90, 0);
-			toPointTimer -= Time.deltaTime;
-			yield return null;
-		}
-		Quaternion endWeaRotation = weaPos.localRotation * Quaternion.Euler(0, 90, 0);
-		while(recoveryTimer > 0)
-		{
-			weaPos.localPosition = Vector3.Lerp(toPoint, stableLocalWeaPos, 1-(recoveryTimer/recoveryTime));
-			weaPos.localRotation = Quaternion.Lerp(endWeaRotation, startWeaRotation, 1-(recoveryTimer/recoveryTime)) * Quaternion.Euler(0, -90, 0);
-			recoveryTimer -= Time.deltaTime;
-			yield return null;
-		}
-		weaPos.localRotation *= Quaternion.Euler(0, 90, 0);
+		
+		attacking = false;
+		attackedObjects = new List<GameObject>();
+		yield return null;
+	}
+	
+	IEnumerator swordAttack()
+	{
+		attacking = true;
+		
 		
 		
 		attacking = false;
@@ -521,18 +532,24 @@ public class weaponSystem : MonoBehaviour
 			Destroy(currWea);
 		}
 		
-		//init
+		//set current slot and asset for use
 		myWeapon = u;
 		a = assets[i];
 		
+		//init current weapon
 		currWea = Instantiate(a.weaModel, weaPos.position, Quaternion.identity);
 		currWea.transform.parent = weaPos;
+		currWea.transform.localRotation = Quaternion.identity;
+		//set rotation to normal rotation of weapon
 		weaPos.transform.localRotation = a.normalRotation;
+		//get ammo of weapon and save it for ability to change weapons
 		ammoWi = currWea.GetComponent<weaponIndex>();
 		ammoWi.ammo = (int)myWeapons[myWeapon].y;
+		//get guntip if it needed
 		if (!a.mele)
 			gunTip = currWea.transform.GetChild(0);
 		
+		//init arm if needed
 		if (a.useArm)
 		{
 			myArm.SetActive(true);
@@ -547,7 +564,7 @@ public class weaponSystem : MonoBehaviour
 		weaAnim.SetFloat("speed", 1 / a.equipTime);
 		weaAnim.Play("equip");
 		
-		yield return new WaitForSeconds(a.unequipTime-0.1f);
+		yield return new WaitForSeconds(a.equipTime-0.1f);
 		
 		canShoot = true;
 		canChange = true;
@@ -587,25 +604,18 @@ public class weaponSystem : MonoBehaviour
 		allSlots[u].color = new Color32(255, 255, 255, 255);
 		
 		//moving
-		int delta = 0;
-		while ((newWeapon.transform.position - weaPos.transform.position).sqrMagnitude > 0.01f)
-		{
-			delta++;
-			newWeapon.transform.position = Vector3.Lerp(newWeapon.transform.position, weaPos.transform.position, delta/newWeaSpeed);
-			yield return 0;
-		}
-		newWeapon.transform.position = weaPos.transform.position;
 		currWea.transform.parent = weaPos;
-		
-		//rotation
-		delta = 0;
-		while (Quaternion.Angle(currWea.transform.localRotation, Quaternion.identity) > 0.1f)
-		{
-			delta++;
-			currWea.transform.localRotation = Quaternion.Lerp(currWea.transform.localRotation, Quaternion.identity, delta/newWeaSpeed);
+		smoothMover.instance ins = sm.MoveObj(currWea.transform, weaPos.transform.position, 2, smoothMover.moveType.stableLerp);
+		ins.dynamicPos = true;
+		ins.dynamicTransform = weaPos.transform;
+		while (ins.active)
 			yield return 0;
-		}
-		weaPos.transform.localRotation = a.normalRotation;
+		
+		//rotating
+		smoothMover.instance ins1 = sm.RotObj(currWea.transform, Quaternion.identity, 2, smoothMover.moveType.stableLerp);
+		ins1.global(false);
+		while (ins1.active)
+			yield return 0;
 		
 		//animation
 		currWea.GetComponent<Animator>().enabled = true;
@@ -735,9 +745,12 @@ public class weaponSystem : MonoBehaviour
 	{
 		if (a.mele)
 		{
-			Gizmos.color = new Color(1, 0, 0, 0.75F);
-			Gizmos.matrix = Matrix4x4.TRS(currWea.transform.position, currWea.transform.rotation, new Vector3(1, 1, 1));
-			Gizmos.DrawWireCube(Vector3.zero, a.meleRadius);
+			if (currWea != null)
+			{
+				Gizmos.color = new Color(1, 0, 0, 0.75F);
+				Gizmos.matrix = Matrix4x4.TRS(currWea.transform.position, currWea.transform.rotation, new Vector3(1, 1, 1));
+				Gizmos.DrawWireCube(Vector3.zero, a.meleRadius);
+			}
 		}
 	}
 }

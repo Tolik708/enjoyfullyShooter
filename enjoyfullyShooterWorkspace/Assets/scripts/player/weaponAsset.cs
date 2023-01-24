@@ -6,7 +6,7 @@ using TMPro;
 [CreateAssetMenu]
 public class weaponAsset : ScriptableObject
 {
-	public enum weaType {simple, mele, pattern, multiBullet_likeShotgun, laser, };
+	public enum weaType {simple, fist, sword, pattern, multiBullet_likeShotgun, laser, };
 	
     [Header("General")]
 	public weaType weaponType;
