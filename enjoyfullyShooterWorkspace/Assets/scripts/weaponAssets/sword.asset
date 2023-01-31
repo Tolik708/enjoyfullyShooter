@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 381f10d0c40a2c648a7c233fe8fa7db6, type: 3}
+  m_Name: sword
+  m_EditorClassIdentifier: 
+  weaponType: 2
+  shootDelay: 0
+  helpStrength: 0
+  multiShoot: 0
+  haveAttackAnim: 1
+  weaModel: {fileID: 0}
+  normalRotation: {x: 0, y: 0, z: 0, w: 0}
+  myTexture: {fileID: 0}
+  unequipTime: 0
+  equipTime: 0
+  shootTime: 0
+  useArm: 0
+  mySprite: {fileID: 0}
+  shootKey: 0
+  reloadKey: 0
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 8192
+  collidingLayers:
+    serializedVersion: 2
+    m_Bits: 37824
+  collidingLayers1: 060000000700000008000000090000000b0000000c0000000d000000
+  bulletLifeTime: 0
+  bullPrefab: {fileID: 0}
+  randSpeed: 0
+  bullSpeed: 0
+  minRandSpeed: 0
+  maxRandSpeed: 0
+  randomDamage: 0
+  bulletDamage: 1
+  headDamageMultiplayer: 2
+  minMaxDamage: {x: 0, y: 0}
+  rayCast: 0
+  trail: {fileID: 0}
+  bulletDelay: 0
+  trailSpeed: 0
+  bullCount: 0
+  randXRot: 0
+  randYRot: 0
+  pattern: 0
+  bullAmmount: 0
+  distanceInfluence: 0
+  distanceInfluencClamp: {x: 0, y: 0}
+  meleRadius: {x: 0, y: 0, z: 0}
+  maxMeleDist: 0
+  useKick: 0
+  kickPowerFly: {x: 0, y: 0}
+  kickPowerGround: {x: 0, y: 0}
+  useGravity: 0
+  gravityPower: 0
+  useExplosions: 0
+  explosionLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  powerOfExplFlyY: 0
+  powerOfExplGroundY: 0
+  powerOfExplFlyX: 0
+  powerOfExplGroundX: 0
+  explosionRadius: 0
+  scater: 0
+  yScater: 0
+  xScater: 0
+  rebound: 0
+  reboundCount: 0
+  useAmmo: 0
+  smoothReload: 0
+  reloadTime: 0
+  reloadWantingTime: 0
+  maxAmmo: 0

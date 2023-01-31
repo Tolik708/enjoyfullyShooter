@@ -14,26 +14,8 @@ public class weaponAsset : ScriptableObject
 	public float helpStrength;
 	public bool multiShoot;
 	
-	[Header("raycast")]
-	public bool rayCast;
-	public GameObject trail;
-	public float bulletDelay;
-	public float trailSpeed;
-	
-	[Header("bullet")]
-	public LayerMask enemyLayer;
-	public LayerMask collidingLayers;
-	public List<int> collidingLayers1;
-	public float bulletLifeTime;
-	public GameObject bullPrefab;
-	
-	[Header("damage")]
-	public bool randomDamage;
-	public float bulletDamage;
-	public float headDamageMultiplayer;
-	public Vector2 minMaxDamage;
-	
 	[Header("ModelAndAnimation")]
+	public bool haveAttackAnim = true;
 	public GameObject weaModel;
 	public Quaternion normalRotation;
 	public Texture2D myTexture;
@@ -44,10 +26,59 @@ public class weaponAsset : ScriptableObject
 	[HideInInspector]
 	public Sprite mySprite;
 	
+	[Header("Input")]
+	public KeyCode shootKey;
+	public KeyCode reloadKey;
+	
+	[Header("bullet")]
+	public LayerMask enemyLayer;
+	public LayerMask collidingLayers;
+	public List<int> collidingLayers1;
+	public float bulletLifeTime;
+	public GameObject bullPrefab;
+	public bool randSpeed;
+	public float bullSpeed;
+	public float minRandSpeed;
+	public float maxRandSpeed;
+	
+	[Header("damage")]
+	public bool randomDamage;
+	public float bulletDamage;
+	public float headDamageMultiplayer;
+	public Vector2 minMaxDamage;
+	
+	
+	[Header("raycast")]
+	public bool rayCast;
+	public GameObject trail;
+	public float bulletDelay;
+	public float trailSpeed;
+	
+	[Header("Multiple Bullets")]
+	public float bullCount;
+	public float randXRot;
+	public float randYRot;
+	
+	[Header("Pattern")]
+	public bool pattern;
+	public float bullAmmount;
+	
+	//[Header("laser")]
+	
+	[Header("fist")]
+	public bool distanceInfluence;
+	public Vector2 distanceInfluencClamp;
+	public Vector3 meleRadius;
+	public float maxMeleDist;
+	
 	[Header("kickback")]
 	public bool useKick;
 	public Vector2 kickPowerFly;
 	public Vector2 kickPowerGround;
+	
+	[Header("gravity")]
+	public bool useGravity;
+	public float gravityPower;
 	
 	[Header("explosion")]
 	public bool useExplosions;
@@ -57,37 +88,6 @@ public class weaponAsset : ScriptableObject
 	public float powerOfExplFlyX;
 	public float powerOfExplGroundX;
 	public float explosionRadius;
-	
-	[Header("gravity")]
-	public bool useGravity;
-	public float gravityPower;
-	
-	[Header("speed")]
-	public bool randSpeed;
-	public float bullSpeed;
-	public float minRandSpeed;
-	public float maxRandSpeed;
-	
-	[Header("Multiple Bullets")]
-	public bool multiBull;
-	public float bullCount;
-	public float randXRot;
-	public float randYRot;
-	
-	[Header("Pattern")]
-	public bool pattern;
-	public float bullAmmount;
-	
-	[Header("laser")]
-	public bool laser;
-	
-	[Header("mele")]
-	public bool mele;
-	public bool haveAttackAnim = true;
-	public bool distanceInfluence;
-	public Vector2 distanceInfluencClamp;
-	public Vector3 meleRadius;
-	public float maxMeleDist;
 	
 	[Header("scater")]
 	public bool scater;
@@ -104,10 +104,6 @@ public class weaponAsset : ScriptableObject
 	public float reloadTime;
 	public float reloadWantingTime;
 	public int maxAmmo;
-	
-	[Header("Input")]
-	public KeyCode shootKey;
-	public KeyCode reloadKey;
 	
 	public void start()
 	{

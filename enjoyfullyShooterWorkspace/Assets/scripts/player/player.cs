@@ -765,13 +765,7 @@ public class player : MonoBehaviour
 			zRotation = Mathf.Lerp(cameraHolder.eulerAngles.z > 180 ? WrapAngle(cameraHolder.eulerAngles.z) : cameraHolder.eulerAngles.z, 0, speedOfTiltWallRun * Time.deltaTime);
 	}
 	
-	float WrapAngle(float angle)
-    {
-        angle%=360;
-        if(angle >180)
-            return angle - 360;
-        return angle;
-    }
+	
 	
 	
 	/////////////////OnCollisionEnter()//

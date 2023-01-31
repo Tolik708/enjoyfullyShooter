@@ -287,7 +287,7 @@ public class weaponSystem : MonoBehaviour
 	{
 		StartCoroutine(shootTimer());
 		//animation
-		if (a.haveAttackAnim || !a.mele)
+		if (a.haveAttackAnim)
 		{
 			weaAnim.SetFloat("speed", 1 / a.shootTime);
 			weaAnim.Play("shoot");
@@ -415,7 +415,7 @@ public class weaponSystem : MonoBehaviour
 	}
 	void meleWeapon()
 	{
-		if (a.mele && attacking)
+		if ((a.weaponType == weaponAsset.weaType.fist || a.weaponType == weaponAsset.weaType.sword) && attacking)
 		{
 			Collider[] contacts = Physics.OverlapBox(currWea.transform.position, a.meleRadius, currWea.transform.rotation, a.enemyLayer);
 			for (int i = 0; i < contacts.Length; i++)
@@ -488,13 +488,14 @@ public class weaponSystem : MonoBehaviour
 		while (ins.active)
 			yield return 0;
 			
+		attacking = false;
+		
 		smoothMover.instance ins1 = sm.MoveObj(weaPos, stableLocalWeaPos, recoveryTime, smoothMover.moveType.stable);
 		ins1.global(false);
 		while(ins1.active)
 			yield return 0;
 		
 		
-		attacking = false;
 		attackedObjects = new List<GameObject>();
 		yield return null;
 	}
@@ -503,7 +504,12 @@ public class weaponSystem : MonoBehaviour
 	{
 		attacking = true;
 		
-		
+		float lastShootTimer = a.shootTime;
+		while (lastShootTimer > 0)
+		{
+			lastShootTimer -= Time.deltaTime;
+			yield return null;
+		}
 		
 		attacking = false;
 		attackedObjects = new List<GameObject>();
@@ -546,7 +552,7 @@ public class weaponSystem : MonoBehaviour
 		ammoWi = currWea.GetComponent<weaponIndex>();
 		ammoWi.ammo = (int)myWeapons[myWeapon].y;
 		//get guntip if it needed
-		if (!a.mele)
+		if (a.weaponType != weaponAsset.weaType.fist && a.weaponType != weaponAsset.weaType.sword)
 			gunTip = currWea.transform.GetChild(0);
 		
 		//init arm if needed
@@ -596,7 +602,7 @@ public class weaponSystem : MonoBehaviour
 		currWea.layer = 10;
 		ammoWi = currWea.GetComponent<weaponIndex>();
 		myWeapons.Add(new Vector2(i, ammoWi.ammo));
-		if (!a.mele)
+		if (a.weaponType != weaponAsset.weaType.fist && a.weaponType != weaponAsset.weaType.sword)
 			gunTip = currWea.transform.GetChild(0);
 		
 		//slots
@@ -743,14 +749,11 @@ public class weaponSystem : MonoBehaviour
 	
 	void OnDrawGizmosSelected()
 	{
-		if (a.mele)
+		if ((a.weaponType != weaponAsset.weaType.fist || a.weaponType != weaponAsset.weaType.sword) && currWea != null)
 		{
-			if (currWea != null)
-			{
-				Gizmos.color = new Color(1, 0, 0, 0.75F);
-				Gizmos.matrix = Matrix4x4.TRS(currWea.transform.position, currWea.transform.rotation, new Vector3(1, 1, 1));
-				Gizmos.DrawWireCube(Vector3.zero, a.meleRadius);
-			}
+			Gizmos.color = new Color(1, 0, 0, 0.75F);
+			Gizmos.matrix = Matrix4x4.TRS(currWea.transform.position, currWea.transform.rotation, new Vector3(1, 1, 1));
+			Gizmos.DrawWireCube(Vector3.zero, a.meleRadius);
 		}
 	}
 }
